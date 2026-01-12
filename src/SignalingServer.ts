@@ -1,6 +1,6 @@
-import { WebSocketServer, WebSocket } from 'ws';
-import { Server as HTTPServer } from 'http';
-import { RoomManager } from './RoomManager';
+import { WebSocketServer, WebSocket } from "ws";
+import { Server as HTTPServer } from "http";
+import { RoomManager } from "./RoomManager";
 import {
   SignalingMessage,
   SignalingMessageType,
@@ -8,33 +8,37 @@ import {
   RoomJoinedMessage,
   PeerJoinedMessage,
   PeerLeftMessage,
-} from './types';
+} from "./types";
 
 export class SignalingServer {
   private wss: WebSocketServer;
   private roomManager: RoomManager;
 
-  constructor(server: HTTPServer, maxPeersPerRoom: number, roomTimeoutMs: number) {
+  constructor(
+    server: HTTPServer,
+    maxPeersPerRoom: number,
+    roomTimeoutMs: number
+  ) {
     this.wss = new WebSocketServer({ server });
     this.roomManager = new RoomManager(maxPeersPerRoom, roomTimeoutMs);
 
-    this.wss.on('connection', (ws: WebSocket) => {
-      console.log('New WebSocket connection');
+    this.wss.on("connection", (ws: WebSocket) => {
+      console.log("New WebSocket connection");
 
-      ws.on('message', (data: Buffer) => {
+      ws.on("message", (data: Buffer) => {
         this.handleMessage(ws, data);
       });
 
-      ws.on('close', () => {
+      ws.on("close", () => {
         this.handleDisconnect(ws);
       });
 
-      ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
+      ws.on("error", (error: Error) => {
+        console.error("WebSocket error:", error);
       });
     });
 
-    console.log('Signaling server initialized');
+    console.log("Signaling server initialized");
   }
 
   private handleMessage(ws: WebSocket, data: Buffer): void {
@@ -53,11 +57,11 @@ export class SignalingServer {
           break;
 
         default:
-          console.warn('Unknown message type:', message.type);
+          console.warn("Unknown message type:", message.type);
       }
     } catch (error) {
-      console.error('Error handling message:', error);
-      this.roomManager.sendError(ws, '', 'Invalid message format');
+      console.error("Error handling message:", error);
+      this.roomManager.sendError(ws, "", "Invalid message format");
     }
   }
 
@@ -67,7 +71,7 @@ export class SignalingServer {
     const success = this.roomManager.joinRoom(roomId, peerId, ws);
 
     if (!success) {
-      this.roomManager.sendError(ws, roomId, 'Room is full');
+      this.roomManager.sendError(ws, roomId, "Room is full");
       return;
     }
 
@@ -95,7 +99,7 @@ export class SignalingServer {
   private handleSignalingMessage(message: SignalingMessage): void {
     const { roomId } = message;
 
-    if ('from' in message) {
+    if ("from" in message) {
       this.roomManager.broadcastToPeers(roomId, message.from, message);
     }
   }
@@ -115,7 +119,7 @@ export class SignalingServer {
       this.roomManager.broadcastToPeers(roomId, peerId, peerLeftMessage);
     }
 
-    console.log('WebSocket disconnected');
+    console.log("WebSocket disconnected");
   }
 
   getStats() {
